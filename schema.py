@@ -5,9 +5,6 @@ from datetime import date as Date, datetime
 
 
 
-class FindPatientRequest(BaseModel):
-    phone: str = Field(..., description="Phone number")
-
 
 class CreatePatientRequest(BaseModel):
     first_name: str
@@ -17,14 +14,6 @@ class CreatePatientRequest(BaseModel):
     email: Optional[str] = None
 
 
-class ListDoctorsRequest(BaseModel):
-    specialty: Optional[str] = None
-
-
-class AvailabilityRequest(BaseModel):
-    doctor_id: Optional[str] = None
-    date: Date
-    date_to: Optional[Date] = None
 
 
 class BookAppointmentRequest(BaseModel):
@@ -39,10 +28,6 @@ class BookAppointmentRequest(BaseModel):
         if value.tzinfo is None or value.utcoffset() is None:
             raise ValueError("start_time must include a timezone")
         return value
-
-
-class PatientAppointmentsRequest(BaseModel):
-    patient_id: str
 
 
 class CancelAppointmentRequest(BaseModel):

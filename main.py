@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from datetime import date
-from schema import FindPatientRequest, AvailabilityRequest, RescheduleAppointmentRequest, CreatePatientRequest, ListDoctorsRequest, BookAppointmentRequest,PatientAppointmentsRequest, CancelAppointmentRequest
+from schema import  RescheduleAppointmentRequest, CreatePatientRequest, BookAppointmentRequest, CancelAppointmentRequest
 
 app = FastAPI(
     title="Dental Receptionist API",
@@ -20,31 +20,9 @@ def health():
         "status":"ok"
     }
 
-# Request Schemas
-
-
-# Home & Health
-
-@app.get("/")
-def home():
-    return {
-        "status": "success",
-        "message": "Welcome to Dental Receptionist API",
-    }
-
-
-@app.get("/health")
-def health():
-    return {
-        "status": "success",
-        "message": "API is healthy",
-    }
-
-
-# 1. Find Patient
-
-@app.post("/tools/find-patient")
-def find_patient(request: FindPatientRequest):
+# 1. Find Patient - GET
+@app.get("/tools/find-patient")
+def find_patient(phone: str):
     return {
         "status": "success",
         "message": "Patient found successfully",
@@ -53,9 +31,7 @@ def find_patient(request: FindPatientRequest):
         "first_name": "Rahul",
     }
 
-
-# 2. Create Patient
-
+# 2. Create Patient - POST
 @app.post("/tools/create-patient")
 def create_patient(request: CreatePatientRequest):
     return {
@@ -64,11 +40,9 @@ def create_patient(request: CreatePatientRequest):
         "patient_id": "PAT-1002",
     }
 
-
-# 3. List Doctors
-
-@app.post("/tools/list-doctors")
-def list_doctors(request: ListDoctorsRequest):
+# 3. List Doctors - GET
+@app.get("/tools/list-doctors")
+def list_doctors(specialty: str | None = None):
     doctors = [
         {
             "doctor_id": "DOC-101",
@@ -87,8 +61,12 @@ def list_doctors(request: ListDoctorsRequest):
         },
     ]
 
-    if request.specialty:
-        doctors = [ doctor for doctor in doctors if doctor["specialty"].lower()== request.specialty.lower()]
+    if specialty:
+        doctors = [
+            doctor
+            for doctor in doctors
+            if doctor["specialty"].lower() == specialty.lower()
+        ]
 
     return {
         "status": "success",
@@ -96,11 +74,13 @@ def list_doctors(request: ListDoctorsRequest):
         "doctors": doctors,
     }
 
-
-# 4. Get Availability
-
-@app.post("/tools/get-availability")
-def get_availability(request: AvailabilityRequest):
+# 4. Get Availability - GET
+@app.get("/tools/get-availability")
+def get_availability(
+    date: date,
+    doctor_id: str | None = None,
+    date_to: date | None = None,
+):
     availability = [
         {
             "doctor_id": "DOC-101",
@@ -121,38 +101,40 @@ def get_availability(request: AvailabilityRequest):
         },
     ]
 
-    if request.doctor_id:
-        availability = [ item for item in availability if item["doctor_id"] == request.doctor_id]
+    if doctor_id:
+        availability = [
+            item
+            for item in availability
+            if item["doctor_id"] == doctor_id
+        ]
 
-    # Return only mock slots matching the requested date.
-    availability = [
-        {
-            **item,
-            "slots": [
-                slot for slot in item["slots"]
-                if date.fromisoformat(slot[:10]) >= request.date
-                and (
-                    request.date_to is None
-                    or date.fromisoformat(slot[:10]) <= request.date_to
-                )
-            ],
-        }
-        for item in availability
-    ]
+    # Filter slots by requested date range.
+    filtered_availability = []
 
-    availability = [
-        item for item in availability if item["slots"]
-    ]
+    for item in availability:
+        slots = [
+            slot
+            for slot in item["slots"]
+            if date <= date.fromisoformat(slot[:10])
+            and (
+                date_to is None
+                or date.fromisoformat(slot[:10]) <= date_to
+            )
+        ]
+
+        if slots:
+            filtered_availability.append({
+                **item,
+                "slots": slots[:5],
+            })
 
     return {
         "status": "success",
         "message": "Availability retrieved successfully",
-        "availability": availability,
+        "availability": filtered_availability,
     }
 
-
-# 5. Book Appointment
-
+# 5. Book Appointment - POST
 @app.post("/tools/book-appointment")
 def book_appointment(request: BookAppointmentRequest):
     return {
@@ -166,17 +148,13 @@ def book_appointment(request: BookAppointmentRequest):
         "status": "confirmed",
     }
 
-
-# 6. Get Patient Appointments
-
-@app.post("/tools/get-patient-appointments")
-def get_patient_appointments(
-    request: PatientAppointmentsRequest,
-):
+# 6. Get Patient Appointments - GET
+@app.get("/tools/get-patient-appointments")
+def get_patient_appointments(patient_id: str):
     return {
         "status": "success",
         "message": "Appointments retrieved successfully",
-        "patient_id": request.patient_id,
+        "patient_id": patient_id,
         "appointments": [
             {
                 "appointment_id": "APT-5001",
@@ -189,13 +167,9 @@ def get_patient_appointments(
         ],
     }
 
-
-# 7. Cancel Appointment
-
+# 7. Cancel Appointment - POST
 @app.post("/tools/cancel-appointment")
-def cancel_appointment(
-    request: CancelAppointmentRequest,
-):
+def cancel_appointment(request: CancelAppointmentRequest):
     return {
         "status": "success",
         "message": "Appointment cancelled successfully",
@@ -203,9 +177,7 @@ def cancel_appointment(
         "status_detail": "cancelled",
     }
 
-
-# 8. Reschedule Appointment
-
+# 8. Reschedule Appointment - POST
 @app.post("/tools/reschedule-appointment")
 def reschedule_appointment(
     request: RescheduleAppointmentRequest,
