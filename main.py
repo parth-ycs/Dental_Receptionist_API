@@ -163,7 +163,7 @@ def book_appointment(request: BookAppointmentRequest):
         "doctor_id": request.doctor_id,
         "doctor_name": "Dr. Amit Sharma",
         "start_time": request.start_time.isoformat(),
-        "status": "confirmed",
+        "status_detail": "confirmed",
     }
 
 
@@ -215,5 +215,5 @@ def reschedule_appointment(
         "message": "Appointment rescheduled successfully",
         "appointment_id": request.appointment_id,
         "new_start_time": request.new_start_time.isoformat(),
-        "status": "rescheduled",
+        "status_detail": "rescheduled",
     }
